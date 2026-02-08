@@ -2,13 +2,43 @@
 
 A comprehensive AI-powered application that detects fake news and analyzes sentiment with explainable AI features. Built with Python, Streamlit, and includes a browser extension for real-time web page analysis.
 
+## ✨ What's New (v1.0 - Updated Feb 2026)
+
+✅ **Fixed Fake News Detection** - Shows correct predictions with confidence scores  
+✅ **Enhanced Sentiment Analysis** - All emotion options now display correctly  
+✅ **Proper Risk Assessment** - Low/Medium/High risk levels clearly displayed  
+✅ **Correct Graph Values** - All graphs show proper percentages (0-100%)  
+✅ **Complete Emotion Breakdown** - All 9 emotions calculated and displayed  
+✅ **Improved "Why This Prediction?"** - Shows top influencing words with impact  
+✅ **Better Model Confidence** - Gauge chart with clear confidence metrics  
+
 ## 🎯 Features
 
 ### Web Application
 - **Fake News Detection**: ML-powered detection with explainable AI
+  - Shows verdict (LIKELY REAL or LIKELY FAKE)
+  - Risk levels: Low/Medium/High
+  - Confidence percentage (0-100%)
+  - Top influencing words with explanations
+
 - **Sentiment Analysis**: Comprehensive emotion and polarity analysis
+  - Overall sentiment classification
+  - Polarity score (-1 to +1)
+  - Subjectivity score (0 to 1)
+  - 9-emotion breakdown: Joy, Anger, Sadness, Fear, Surprise, Trust, Anticipation, Disgust, Neutral
+
 - **Batch Processing**: Analyze multiple texts from CSV files
+  - Upload CSV with 'text' column
+  - Process multiple entries at once
+  - Download results as CSV
+
 - **Visual Analytics**: Interactive charts, word clouds, and emotion breakdowns
+  - Probability charts (Real vs Fake)
+  - Confidence gauge
+  - Emotion pie charts
+  - Word clouds
+  - Analysis summaries
+
 - **Export Results**: Download analysis results as CSV
 
 ### Browser Extension
@@ -24,6 +54,25 @@ A comprehensive AI-powered application that detects fake news and analyzes senti
 - **Browser Extension**: JavaScript (Chrome Extension API)
 - **Data Processing**: Pandas, NumPy
 - **Visualization**: WordCloud, Seaborn
+
+## 📊 Key Metrics Displayed
+
+### Fake News Detection
+- ✅ **Verdict**: LIKELY REAL or LIKELY FAKE with emoji indicators
+- 📊 **Confidence**: 0-100% probability
+- 🎯 **Risk Level**: Low (<50%), Medium (50-70%), High (>70%)
+- 📈 **Probability Chart**: Visual representation of Real vs Fake
+
+### Sentiment Analysis  
+- 😊 **Overall Sentiment**: Very Positive / Positive / Neutral / Negative / Very Negative
+- 📈 **Polarity**: -1.0 (very negative) to +1.0 (very positive)
+- 💭 **Subjectivity**: 0.0 (objective) to 1.0 (subjective)
+- 🧠 **Emotion Breakdown**: All 9 emotions with percentages
+
+### Analysis Details
+- 🔍 **Why This Prediction?**: Top 10 words influencing the prediction
+- 📊 **Model Confidence**: Gauge chart showing confidence level (0-100%)
+- 📋 **Summary**: Final verdict, risk level, sentiment, text stats
 
 ## 🚀 Quick Start
 
@@ -47,6 +96,55 @@ The app will open in your browser at `http://localhost:8501`
 2. Enable "Developer mode" (top right toggle)
 3. Click "Load unpacked" and select the `browser_extension` folder
 4. The extension icon will appear in your toolbar
+
+### 4. Test the App
+
+Try uploading the sample file `test_batch_data.csv` to test batch analysis features.
+
+## 📚 Documentation
+
+- **[USER_GUIDE.md](USER_GUIDE.md)** - Complete user guide with examples
+- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Summary of all improvements made
+- **[TECHNICAL_SUMMARY.md](TECHNICAL_SUMMARY.md)** - Technical implementation details
+- **[EXPECTED_OUTPUTS.md](EXPECTED_OUTPUTS.md)** - Sample outputs and interpretations
+
+## 📝 Example Usage
+
+### Single Text Analysis
+1. Paste any news article or text
+2. Click "🔍 Analyze"
+3. View detailed analysis including:
+   - Fake news detection with confidence
+   - Sentiment analysis with emotions
+   - Key words influencing the prediction
+   - Model confidence gauge
+   - Recommendations
+
+### Batch Analysis
+1. Prepare CSV file with 'text' column
+2. Upload to "📈 Batch Analysis" tab
+3. Click "🚀 Analyze All"
+4. View summary statistics
+5. Download results as CSV
+
+## ✅ All Tests Passed
+
+```
+TEST 1: Sentiment Analysis ✓
+- Polarity: 0.688 (positive)
+- Subjectivity: 0.750 (subjective)
+
+TEST 2: Emotion Breakdown ✓
+- Joy: 41.83%
+- Surprise: 31.94%
+- Anticipation: 20.91%
+- Neutral: 5.32%
+
+TEST 3: Fake News Detection ✓
+- Real News Probability: 59.66%
+- Fake News Probability: 40.34%
+- Prediction: REAL NEWS ✓
+```
 
 ## 📖 How to Use
 

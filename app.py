@@ -231,36 +231,66 @@ class SentimentAnalyzer:
     def get_emotion_breakdown(self, text):
         """Get detailed emotion analysis"""
         if not text or len(text.strip()) == 0:
-            return {'neutral': 1.0}
+            return {
+                'joy': 0.0,
+                'anger': 0.0,
+                'sadness': 0.0,
+                'fear': 0.0,
+                'surprise': 0.0,
+                'trust': 0.0,
+                'anticipation': 0.0,
+                'disgust': 0.0,
+                'neutral': 1.0
+            }
         
         try:
             blob = TextBlob(text)
             polarity = blob.sentiment.polarity
             subjectivity = blob.sentiment.subjectivity
             
-            # Enhanced emotion mapping
+            # Enhanced emotion mapping based on polarity and subjectivity
             emotions = {
-                'joy': max(0, polarity * 0.8) if polarity > 0.2 else 0,
-                'anger': max(0, -polarity * 0.7) if polarity < -0.3 else 0,
-                'sadness': max(0, -polarity * 0.6) if polarity < -0.1 and subjectivity > 0.3 else 0,
-                'fear': max(0, -polarity * 0.5) if polarity < -0.2 and subjectivity > 0.7 else 0,
-                'surprise': subjectivity * 0.4 if abs(polarity) > 0.3 else 0,
-                'trust': max(0, polarity * 0.3) if polarity > 0 and subjectivity < 0.5 else 0,
-                'anticipation': subjectivity * 0.3 if polarity > 0.1 else 0,
-                'disgust': max(0, -polarity * 0.4) if polarity < -0.4 else 0,
-                'neutral': max(0.1, 1 - abs(polarity) - subjectivity * 0.5)
+                'joy': max(0, min(polarity * 1.0, 1.0)) if polarity > 0.3 else 0,
+                'anger': max(0, min(-polarity * 0.8, 1.0)) if polarity < -0.4 else 0,
+                'sadness': max(0, min(-polarity * 0.7, 1.0)) if -0.5 < polarity < -0.05 else 0,
+                'fear': max(0, min(-polarity * 0.6, 1.0)) if polarity < -0.3 and subjectivity > 0.6 else 0,
+                'surprise': max(0, min(subjectivity * 0.7, 1.0)) if abs(polarity) > 0.4 else 0,
+                'trust': max(0, min(polarity * 0.6, 1.0)) if polarity > 0.2 and subjectivity < 0.6 else 0,
+                'anticipation': max(0, min(polarity * 0.5, 1.0)) if polarity > 0.1 and subjectivity > 0.3 else 0,
+                'disgust': max(0, min(-polarity * 0.7, 1.0)) if polarity < -0.5 else 0,
+                'neutral': max(0.05, min(1 - abs(polarity) - subjectivity * 0.3, 1.0))
             }
             
             # Normalize emotions to sum to 1
             total = sum(emotions.values())
             if total > 0:
-                emotions = {k: v/total for k, v in emotions.items()}
+                emotions = {k: round(v/total, 4) for k, v in emotions.items()}
             else:
-                emotions = {'neutral': 1.0}
+                emotions = {
+                    'joy': 0.0,
+                    'anger': 0.0,
+                    'sadness': 0.0,
+                    'fear': 0.0,
+                    'surprise': 0.0,
+                    'trust': 0.0,
+                    'anticipation': 0.0,
+                    'disgust': 0.0,
+                    'neutral': 1.0
+                }
             
             return emotions
         except Exception:
-            return {'neutral': 1.0}
+            return {
+                'joy': 0.0,
+                'anger': 0.0,
+                'sadness': 0.0,
+                'fear': 0.0,
+                'surprise': 0.0,
+                'trust': 0.0,
+                'anticipation': 0.0,
+                'disgust': 0.0,
+                'neutral': 1.0
+            }
 
 def load_sample_data():
     """Create sample fake news dataset"""
@@ -361,13 +391,36 @@ def main():
                     
                     if prediction is not None:
                         is_fake = prediction == 1
+                        # Get confidence for the predicted class
                         confidence = probability[1] if is_fake else probability[0]
+                        fake_confidence = probability[1]
+                        real_confidence = probability[0]
                         
-                        # Display result
+                        # Display result with clear status
                         if is_fake:
                             st.error(f"⚠️ **LIKELY FAKE NEWS** (Confidence: {confidence:.2%})")
+                            risk_level = "High Risk"
+                            risk_color = "error"
                         else:
                             st.success(f"✅ **LIKELY REAL NEWS** (Confidence: {confidence:.2%})")
+                            # Determine risk level based on fake news probability
+                            if fake_confidence > 0.7:
+                                risk_level = "High Risk"
+                                risk_color = "error"
+                            elif fake_confidence > 0.5:
+                                risk_level = "Medium Risk"
+                                risk_color = "warning"
+                            else:
+                                risk_level = "Low Risk"
+                                risk_color = "success"
+                        
+                        # Display risk assessment
+                        if risk_color == "error":
+                            st.error(f"🚨 {risk_level}: Strong indicators of fake news detected!")
+                        elif risk_color == "warning":
+                            st.warning(f"⚠️ {risk_level}: Some fake news indicators present.")
+                        else:
+                            st.success(f"✅ {risk_level}: Appears to be legitimate news.")
                         
                         # Probability chart
                         if PLOTLY_AVAILABLE:
@@ -377,60 +430,53 @@ def main():
                             
                             fig = go.Figure()
                             
-                            # Add bars with better styling
+                            # Add bars with better styling and correct percentages
                             fig.add_trace(go.Bar(
                                 x=['Real News', 'Fake News'],
-                                y=[real_prob, fake_prob],
+                                y=[real_prob * 100, fake_prob * 100],
                                 marker_color=['#28a745', '#dc3545'],  # Green for real, red for fake
-                                text=[f'{real_prob:.1%}', f'{fake_prob:.1%}'],
-                                textposition='auto',
-                                textfont=dict(color='white', size=14, family='Arial Black'),
-                                hovertemplate='<b>%{x}</b><br>Probability: %{y:.1%}<extra></extra>'
+                                text=[f'{real_prob:.2%}', f'{fake_prob:.2%}'],
+                                textposition='outside',
+                                textfont=dict(color='black', size=14, family='Arial Black'),
+                                hovertemplate='<b>%{x}</b><br>Probability: %{y:.1f}%<br>%{text}<extra></extra>'
                             ))
                             
                             # Update layout for better appearance
                             fig.update_layout(
                                 title={
-                                    'text': 'Fake News Detection Probabilities',
+                                    'text': '📊 Model Confidence',
                                     'x': 0.5,
                                     'xanchor': 'center',
-                                    'font': {'size': 16, 'family': 'Arial'}
+                                    'font': {'size': 18, 'family': 'Arial', 'color': '#333'}
                                 },
-                                yaxis_title="Probability",
+                                yaxis_title="Probability (%)",
                                 yaxis=dict(
-                                    range=[0, 1],
-                                    tickformat='.0%',
+                                    range=[0, 100],
+                                    tickformat='d',
+                                    ticksuffix='%',
                                     gridcolor='lightgray',
                                     gridwidth=1
                                 ),
                                 xaxis=dict(
                                     tickfont={'size': 12}
                                 ),
-                                plot_bgcolor='white',
+                                plot_bgcolor='rgba(240,240,240,0.5)',
                                 paper_bgcolor='white',
                                 height=400,
-                                margin=dict(l=50, r=50, t=80, b=50),
+                                margin=dict(l=60, r=60, t=100, b=60),
                                 showlegend=False
                             )
                             
                             # Add a threshold line at 50%
                             fig.add_hline(
-                                y=0.5, 
+                                y=50, 
                                 line_dash="dash", 
                                 line_color="gray",
                                 annotation_text="Decision Threshold (50%)",
-                                annotation_position="top right"
+                                annotation_position="right"
                             )
                             
                             st.plotly_chart(fig, use_container_width=True)
-                            
-                            # Add interpretation
-                            if fake_prob > 0.7:
-                                st.error("🚨 **High Risk**: Strong indicators of fake news detected!")
-                            elif fake_prob > 0.5:
-                                st.warning("⚠️ **Medium Risk**: Some fake news indicators present.")
-                            else:
-                                st.success("✅ **Low Risk**: Appears to be legitimate news.")
                                 
                         else:
                             # Fallback for when Plotly is not available
@@ -449,12 +495,12 @@ def main():
                             # Create explanation dataframe with better formatting
                             explanation_data = []
                             for word, contribution, coef in contributions:
-                                impact = 'Fake indicator' if contribution > 0 else 'Real indicator'
+                                impact = 'Fake 🔴' if contribution > 0 else 'Real 🟢'
                                 strength = abs(contribution)
                                 explanation_data.append({
                                     'Word': word,
                                     'Impact': impact,
-                                    'Influence': f"{contribution:.4f}",
+                                    'Influence Score': f"{contribution:.4f}",
                                     'Strength': strength
                                 })
                             
@@ -462,7 +508,7 @@ def main():
                             
                             # Display as a styled dataframe
                             st.dataframe(
-                                explanation_df[['Word', 'Impact', 'Influence']], 
+                                explanation_df[['Word', 'Impact', 'Influence Score']], 
                                 use_container_width=True,
                                 hide_index=True
                             )
@@ -471,8 +517,8 @@ def main():
                             st.write("**Key Words Influencing Decision:**")
                             
                             # Separate positive and negative contributors
-                            fake_words = [item for item in explanation_data if item['Impact'] == 'Fake indicator'][:3]
-                            real_words = [item for item in explanation_data if item['Impact'] == 'Real indicator'][:3]
+                            fake_words = [item for item in explanation_data if 'Fake 🔴' in item['Impact']][:5]
+                            real_words = [item for item in explanation_data if 'Real 🟢' in item['Impact']][:5]
                             
                             if fake_words:
                                 st.write("🔴 **Fake News Indicators:**")
@@ -511,7 +557,7 @@ def main():
                                     }
                                 }
                             ))
-                            fig_gauge.update_layout(height=300)
+                            fig_gauge.update_layout(height=350)
                             st.plotly_chart(fig_gauge, use_container_width=True)
                         else:
                             st.progress(overall_confidence)
@@ -569,27 +615,47 @@ def main():
                     # Confidence indicator
                     confidence = sentiment_result.get('confidence', 0)
                     if confidence > 0.5:
-                        st.success(f"High confidence: {confidence:.2%}")
+                        st.success(f"✅ High confidence: {confidence:.2%}")
                     elif confidence > 0.2:
-                        st.warning(f"Medium confidence: {confidence:.2%}")
+                        st.warning(f"⚠️ Medium confidence: {confidence:.2%}")
                     else:
-                        st.info(f"Low confidence: {confidence:.2%}")
+                        st.info(f"ℹ️ Low confidence: {confidence:.2%}")
                     
                     # Emotion breakdown
                     emotions = st.session_state.sentiment_analyzer.get_emotion_breakdown(user_text)
                     
-                    # Emotion chart
+                    # Emotion chart with all emotions
                     if PLOTLY_AVAILABLE:
                         emotion_df = pd.DataFrame(list(emotions.items()), columns=['Emotion', 'Score'])
-                        # Filter out very small values for cleaner chart
-                        emotion_df = emotion_df[emotion_df['Score'] > 0.05]
-                        if not emotion_df.empty:
-                            fig = px.pie(emotion_df, values='Score', names='Emotion', title="Emotion Breakdown")
-                            st.plotly_chart(fig, use_container_width=True)
+                        # Show all emotions, sort by score descending
+                        emotion_df = emotion_df.sort_values('Score', ascending=False)
+                        
+                        fig = px.pie(
+                            emotion_df, 
+                            values='Score', 
+                            names='Emotion', 
+                            title="🧠 Emotion Breakdown",
+                            color_discrete_sequence=px.colors.qualitative.Set3,
+                            hole=0.4
+                        )
+                        fig.update_layout(
+                            height=400,
+                            font=dict(size=11)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Show emotion scores in a table format
+                        st.write("**Detailed Emotion Scores:**")
+                        emotion_display = pd.DataFrame(
+                            [(emotion.replace('_', ' ').title(), f"{score:.2%}") 
+                             for emotion, score in emotions.items()],
+                            columns=['Emotion', 'Percentage']
+                        )
+                        st.dataframe(emotion_display, use_container_width=True, hide_index=True)
                     else:
                         st.write("**Emotion Breakdown:**")
-                        for emotion, score in emotions.items():
-                            if score > 0.05:  # Only show significant emotions
+                        for emotion, score in sorted(emotions.items(), key=lambda x: x[1], reverse=True):
+                            if score > 0.01:  # Show all but very small scores
                                 st.write(f"- {emotion.title()}: {score:.2%}")
                     
                     # Word cloud
@@ -615,31 +681,39 @@ def main():
                 st.markdown("---")
                 st.subheader("📋 Analysis Summary")
                 
-                # Create summary columns
-                sum_col1, sum_col2, sum_col3 = st.columns(3)
+                # Create summary columns with all important metrics
+                sum_col1, sum_col2, sum_col3, sum_col4 = st.columns(4)
                 
                 with sum_col1:
-                    prediction_text = "LIKELY FAKE" if prediction == 1 else "LIKELY REAL"
-                    prediction_color = "🔴" if prediction == 1 else "🟢"
+                    verdict = "LIKELY REAL" if prediction != 1 else "LIKELY FAKE"
+                    verdict_emoji = "🟢" if prediction != 1 else "🔴"
                     st.metric(
                         "Final Verdict", 
-                        f"{prediction_color} {prediction_text}",
-                        f"{max(probability):.1%} confidence"
+                        f"{verdict_emoji}",
+                        f"{verdict}"
                     )
                 
                 with sum_col2:
+                    risk_label = "Low Risk" if fake_confidence <= 0.5 else ("Medium Risk" if fake_confidence <= 0.7 else "High Risk")
+                    st.metric(
+                        "Risk Level",
+                        f"{risk_label}",
+                        f"{fake_confidence:.1%} Fake"
+                    )
+                
+                with sum_col3:
                     sentiment_emoji = {
                         'Very Positive': '😄', 'Positive': '😊', 'Negative': '😞', 
-                        'Very Negative': '😡', 'Neutral': '😐'
+                        'Very Negative': '😡', 'Neutral': '😐', 'Error': '❓'
                     }
                     emoji = sentiment_emoji.get(sentiment_result['sentiment'], '😐')
                     st.metric(
                         "Sentiment", 
-                        f"{emoji} {sentiment_result['sentiment']}",
-                        f"{sentiment_result['polarity']:.2f} polarity"
+                        f"{emoji}",
+                        f"{sentiment_result['sentiment']}"
                     )
                 
-                with sum_col3:
+                with sum_col4:
                     word_count = len(user_text.split())
                     reading_time = max(1, word_count // 200)
                     st.metric(
@@ -651,27 +725,27 @@ def main():
                 # Recommendations
                 st.subheader("💡 Recommendations")
                 if prediction == 1:  # Fake news
-                    st.warning("""
+                    st.error("""
                     **⚠️ This content shows signs of potentially fake news. Consider:**
-                    - Verify information through multiple reliable sources
-                    - Check the original source and publication date
-                    - Look for supporting evidence and citations
-                    - Be cautious about sharing without verification
+                    - 🔍 Verify information through multiple reliable sources
+                    - 📅 Check the original source and publication date
+                    - 📝 Look for supporting evidence and citations
+                    - 🚫 Be cautious about sharing without verification
                     """)
                 else:  # Real news
-                    if max(probability) < 0.7:
-                        st.info("""
-                        **ℹ️ While this appears to be legitimate news, always:**
-                        - Cross-reference with other reputable sources
-                        - Check for recent updates or corrections
-                        - Consider the source's credibility and bias
+                    if confidence < 0.7:
+                        st.warning("""
+                        **⚠️ While this appears to be legitimate news, always:**
+                        - 🔍 Cross-reference with other reputable sources
+                        - 🔄 Check for recent updates or corrections
+                        - 📊 Consider the source's credibility and bias
                         """)
                     else:
                         st.success("""
-                        **✅ This content appears to be legitimate news, but remember:**
-                        - Stay informed by reading multiple perspectives
-                        - Verify important claims independently
-                        - Consider the publication date and context
+                        **✅ This content appears to be legitimate news. Remember:**
+                        - 📚 Stay informed by reading multiple perspectives
+                        - ✔️ Verify important claims independently
+                        - 🗓️ Consider the publication date and context
                         """)
             else:
                 st.warning("Please enter some text to analyze.")
